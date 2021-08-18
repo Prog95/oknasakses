@@ -1,0 +1,20 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M30 3V46" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 10L1 10" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 10L59 10" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 20L1 20" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 20L59 20" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 15H5" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 15H55" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 25H5" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 25H55" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 35H5" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 35H55" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 30L1 30" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 30L59 30" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M9 40L1 40" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M51 40L59 40" stroke="#0AA6E0" stroke-width="3"/>
+<rect x="48" y="4" width="42" height="36" transform="rotate(90 48 4)" stroke="#0AA6E0" stroke-width="3"/>
+<path d="M49 46L11 46L6 51L6 53L54 53L54 51L49 46Z" stroke="#EC6608" stroke-width="3"/>
+<path d="M15 9.66667L18 7M18 15L21 12.3333M15 13.6667L21 8.33333" stroke="#0AA6E0" stroke-width="2"/>
+</svg>

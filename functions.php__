@@ -1,0 +1,613 @@
+<?php
+require_once('include/classes.php');
+require_once('include/ajax-responses.php');
+
+//Remove admin bar
+add_filter( 'show_admin_bar', '__return_false' );
+
+// Функция миниатюр
+add_theme_support('post-thumbnails');
+
+// Загружаемые стили и скрипты
+function my_scripts_method() {
+	wp_deregister_script( 'jquery' );
+	wp_register_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js', array(), '2.1.4', false);
+	wp_enqueue_script( 'jquery' );
+}
+
+
+add_action( 'wp_enqueue_scripts', 'my_scripts_method' );
+function load_style_script () {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	$file_list = list_files( (get_template_directory()) );
+	if ($file_list) foreach( $file_list as $file ){
+		$matches = array();
+		$re = '/.*\/success-dvwb(.*\/(.*)\.(.*\.|)(css|js))/m';
+		preg_match_all($re, $file, $matches, PREG_PATTERN_ORDER, 0);
+		// print_r($matches);
+		if (!isset($matches[4][0])) continue;
+		if($matches[4][0] == 'css') {
+			wp_enqueue_style( $matches[2][0].'.css', get_template_directory_uri() . $matches[1][0], array(), NULL);
+		} else if($matches[4][0] == 'js') {
+			wp_enqueue_script( $matches[2][0].'.js', get_template_directory_uri() . $matches[1][0], array(), NULL, true);
+		}
+	}
+}
+
+
+add_filter( 'lazyblock/plitka-s-cenami/frontend_allow_wrapper', '__return_false' );
+add_filter( 'lazyblock/element-plitki/frontend_allow_wrapper', '__return_false' );
+
+// Загружаем стили и скрипты
+add_action('wp_enqueue_scripts', 'load_style_script');
+
+// Включаем меню
+register_nav_menu('top-nav', 'Main Navigation');
+register_nav_menu('sub-nav', 'Sub Navigation');
+register_nav_menu('footer-nav', 'FAQ Navigation');
+
+register_nav_menu('popup-nav-col-1.1', 'Всплывающее окно позиция 1.1');
+register_nav_menu('popup-nav-col-1.2', 'Всплывающее окно позиция 1.2');
+register_nav_menu('popup-nav-col-2.1', 'Всплывающее окно позиция 2.1');
+register_nav_menu('popup-nav-col-2.2', 'Всплывающее окно позиция 2.2');
+register_nav_menu('popup-nav-col-3.1', 'Всплывающее окно позиция 3.1');
+register_nav_menu('popup-nav-col-3.2', 'Всплывающее окно позиция 3.2');
+
+register_nav_menu('popup-nav-bottom', 'Всплывающее окно позиция внизу');
+
+
+
+
+if( function_exists('acf_add_options_page') ) {
+	
+	acf_add_options_page('Settings');
+	
+}
+ /* actions */
+add_action('wp_ajax_nopriv_custom_register', 'custom_register_new_user');
+// add_action('wp_ajax_custom_register', 'custom_register_new_user');
+add_action('wp_ajax_nopriv_custom_login', 'custom_login');
+add_action('wp_ajax_update_pd', 'update_pd');
+add_action('wp_ajax_update_email_pass', 'update_email_pass');
+add_action('wp_ajax_update_email_op', 'update_email_op');
+
+class magomra_walker_nav_menu extends Walker_Nav_Menu {
+
+	// add classes to ul sub-menus
+	function start_lvl( &$output, $depth = 0, $args = array() ) {
+		// depth dependent classes
+		$indent = ( $depth > 0  ? str_repeat( "\t", $depth ) : '' ); // code indent
+		$display_depth = ( $depth + 1); // because it counts the first submenu as 0
+		$classes = array(
+			'nav nav-level-' . ($display_depth + 1) );
+		$class_names = implode( ' ', $classes );
+
+		// build html
+		$output .= "\n" . $indent . '<ul class="' . $class_names . '">' . "\n";
+	}
+
+	// add main/sub classes to li's and links
+	 function start_el( &$output, $item, $depth = 0, $args = array() , $id = 0 ) {
+		global $wp_query;
+		$indent = ( $depth > 0 ? str_repeat( "\t", $depth ) : '' ); // code indent
+
+		// depth dependent classes
+		$depth_classes = array(
+			( $depth == 0 ? 'nav-item' : 'nav-item' ),
+			( $depth >=2 ? 'nav-item' : '' ),
+			( $depth % 2 ? 'nav-item' : 'nav-item' ),
+			'' . $depth
+		);
+		$depth_class_names = esc_attr( implode( ' ', $depth_classes ) );
+
+		// passed classes
+		$classes = empty( $item->classes ) ? array() : (array) $item->classes;
+		$class_names = esc_attr( implode( ' ', apply_filters( 'nav_menu_css_class', array_filter( $classes ), $item ) ) );
+
+		// build html
+		$output .= $indent . '<li id="nav-menu-item-'. $item->ID . '" class="' . $depth_class_names . ' ' . $class_names . '">';
+
+		// link attributes
+		$attributes  = ! empty( $item->attr_title ) ? ' title="'  . esc_attr( $item->attr_title ) .'"' : '';
+		$attributes .= ! empty( $item->target )     ? ' target="' . esc_attr( $item->target     ) .'"' : '';
+		$attributes .= ! empty( $item->xfn )        ? ' rel="'    . esc_attr( $item->xfn        ) .'"' : '';
+		$attributes .= ! empty( $item->url )        ? ' href="'   . esc_attr( $item->url        ) .'"' : '';
+		$attributes .= ' class="nav-link"';
+
+		$item_output = sprintf( '%1$s<a%2$s>%3$s%4$s%5$s</a>%6$s',
+			$args->before,
+			$attributes,
+			$args->link_before,
+			apply_filters( 'the_title', $item->title, $item->ID ),
+			$args->link_after,
+			$args->after
+		);
+
+		// build html
+		$output .= apply_filters( 'walker_nav_menu_start_el', $item_output, $item, $depth, $args );
+	}
+}
+
+// И там, где нужно выводим меню так:
+function magomra_nav_menu( $menu_id ) {
+	// main navigation menu
+	$args = array(
+		'theme_location'    => $menu_id,
+		'container'     => false,
+		'conatiner_class'   => 'top-navigation',
+		'menu_class'        => 'menu main-menu menu-depth-0 menu-even', 
+		'echo'          => true,
+		'items_wrap'        => '%3$s',
+		'depth'         => 10, 
+		'walker'        => new magomra_walker_nav_menu
+	);
+
+	// print menu
+	wp_nav_menu( $args );
+}
+
+add_filter('nav_menu_css_class' , 'special_nav_class' , 10 , 2);
+
+function special_nav_class ($classes, $item) {
+    if (in_array('current-menu-item', $classes) ){
+        $classes[] = 'is-active ';
+    }
+    return $classes;
+}
+
+function user_image_b64($b64image, $title) {
+
+	if (isset($b64image)) {
+	  $upload_dir       = wp_upload_dir();
+
+	  // @new
+	  $upload_path      = str_replace( '/', DIRECTORY_SEPARATOR, $upload_dir['path'] ) . DIRECTORY_SEPARATOR;
+
+	  $img = $b64image;
+	  $re = '/data:image\/*(\w*);base64/m';
+	  preg_match_all($re, $img, $matches, PREG_SET_ORDER, 0);
+	  $ext = $matches[0][1];
+	  $img = str_replace('data:image/'.$ext.';base64,', '', $img);
+	  $img = str_replace(' ', '+', $img);
+
+	  $decoded          = base64_decode($img) ;
+
+	  $filename         = 'user_pic.'.$ext;
+
+	  $hashed_filename  = md5( $filename . microtime() ) . '_' . $filename;
+
+	  // @new
+	  $image_upload     = file_put_contents( $upload_path . $hashed_filename, $decoded );
+
+	  //HANDLE UPLOADED FILE
+	  if( !function_exists( 'wp_handle_sideload' ) ) {
+		require_once( ABSPATH . 'wp-admin/includes/file.php' );
+	  }
+	  // Without that I'm getting a debug error!?
+	  if( !function_exists( 'wp_get_current_user' ) ) {
+		require_once( ABSPATH . 'wp-includes/pluggable.php' );
+	  }
+	  // @new
+	  $file             = array();
+	  $file['error']    = '';
+	  $file['tmp_name'] = $upload_path . $hashed_filename;
+	  $file['name']     = $hashed_filename;
+	  $file['type']     = 'image/'.$ext;
+	  $file['size']     = filesize( $upload_path . $hashed_filename );
+
+	  // upload file to server
+	  // @new use $file instead of $image_upload
+	  $file_return      = wp_handle_sideload( $file, array( 'test_form' => false ) );
+	  $filename = $file_return['file'];
+	  $attachment = array(
+	   'post_mime_type' => $file_return['type'],
+	   'post_title' => preg_replace('/\.[^.]+$/', '', basename($filename)),
+	   'post_content' => '',
+	   'post_status' => 'inherit',
+	   'guid' => $wp_upload_dir['url'] . '/' . basename($filename)
+	   );
+	  $attach_id = wp_insert_attachment( $attachment, $filename );
+	  require_once(ABSPATH . 'wp-admin/includes/image.php');
+	  $attach_data = wp_generate_attachment_metadata( $attach_id, $filename );
+	  wp_update_attachment_metadata( $attach_id, $attach_data );
+	  return $attach_id;
+	}
+}
+	
+
+function extract_request($data){
+	if (isset($data) && is_array($data)){
+		$array = [];
+		foreach ($data as $value) {
+			$array[$value['name']] = $value['value'];
+		}
+		return $array;
+	} else {
+		return false;
+	}
+}
+if (isset($_GET['deleteacc'])){
+	require_once(ABSPATH.'wp-admin/includes/user.php');
+	$user_id = get_current_user_id();
+	wp_logout();
+	var_dump($user_id);
+	var_dump(wp_delete_user( $user_id, 1 ));
+	wp_redirect( home_url() ); 
+	exit;
+}
+
+add_action('wp_ajax_nopriv_ajax_order_form', 'send_email');
+add_action('wp_ajax_ajax_order_form', 'send_email');
+
+add_action('wp_ajax_nopriv_lead', 'send_email');
+add_action('wp_ajax_lead', 'send_email');
+
+add_action('wp_ajax_nopriv_form_request', 'send_email');
+add_action('wp_ajax_form_request', 'send_email');
+
+function send_email() {
+	$message  = __('Форма обратной связи') . "<br><br>";
+	foreach ($_POST as $key => $value) {
+		$message .= $key.' : '.$value.' <br><br>';
+	}
+	$headers = array('Content-Type: text/html; charset=UTF-8');
+	wp_mail(get_option('admin_email'), 'ФОРМА на сайте' , $message, $headers);
+}
+
+
+add_action('wp_ajax_nopriv_ajax_trans', 'ajax_trans');
+add_action('wp_ajax_ajax_trans', 'ajax_trans');
+
+function ajax_trans() {
+	$message  = __('Форма обратной связи') . "<br><br>";
+	foreach ($_POST as $key => $value) {
+		$message .= $key.' : '.$value.' <br><br>';
+	}
+	$headers = array('Content-Type: text/html; charset=UTF-8');
+	wp_mail(get_option('admin_email'), 'Трансфер' , $message, $headers);
+}
+
+add_action('wp_ajax_nopriv_reviews', 'reviews');
+add_action('wp_ajax_reviews', 'reviews');
+
+function reviews() {
+	parse_str($_POST['form'], $data);
+	$images = array();
+	foreach ($_POST['gallery'] as $key => $value) {
+		$images[] =  user_image_b64($value, 'review_img');
+	}
+	$post_data = array(
+		'post_title'    => 'Новый отзыв',
+		'post_content'  => $data['mess'],
+		'post_status'   => 'pending',
+		'post_type'     => 'reviews'
+	);
+	// Вставляем запись в базу данных
+	$post_id = wp_insert_post( $post_data );
+	update_field('автор', $data['name'], $post_id);
+	update_field('галерея', $images, $post_id);
+}
+
+add_filter( 'render_block', function( $block_content, $block ) {
+    // Target core/* and core-embed/* blocks.
+    if ( preg_match( '~^core/|core-embed/~', $block['blockName'] ) && 'core/group' == $block['blockName'] ) {
+		// var_dump( $block['blockName']);
+       $block_content = sprintf( '<section class="payment-textWrap">
+	   <div class="container">
+		 <div class="paddOne">
+		   <div class="row">
+			 <div class="col">
+			   <div class="content">%s          </div>
+	   </div>
+	 </div>
+   </div>
+ </div>
+</section>', $block_content );
+    }
+    return $block_content;
+}, PHP_INT_MAX - 1, 2 );
+
+
+function register_acf_block_types() {
+
+    // register a testimonial block.
+	acf_register_block_type(array(
+        'name'              => 'slider_wind',
+        'title'             => __('Слайдер окна'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/slider_wind.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	
+	acf_register_block_type(array(
+        'name'              => 'slider_access',
+        'title'             => __('Слайдер товары'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/slider_access.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	
+	acf_register_block_type(array(
+        'name'              => 'tabs',
+        'title'             => __('Табер'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/tabs_block.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	acf_register_block_type(array(
+        'name'              => 'slider_cottage',
+        'title'             => __('Слайдер коттедж'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/slider_cottage.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	acf_register_block_type(array(
+        'name'              => 'slider_sales',
+        'title'             => __('Слайдер акция'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/slider_sales.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	acf_register_block_type(array(
+        'name'              => 'window_repair',
+        'title'             => __('Ремонт Окон'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/window_repair.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+	acf_register_block_type(array(
+        'name'              => 'new_reviews',
+        'title'             => __('Три отзыва'),
+        'description'       => __(''),
+        'render_template'   => '/blocks/new_reviews.php',
+        'category'          => 'formatting',
+        'icon'              => 'admin-comments',
+		'keywords'          => array( ),
+		'mode' 				=> 'edit'
+	));
+}
+
+// Check if function exists and hook into setup.
+if( function_exists('acf_register_block_type') ) {
+    add_action('acf/init', 'register_acf_block_types');
+}
+
+
+add_filter( 'wpcf7_before_send_mail', 'wpcf7_before_send_mail_start_function' );
+function wpcf7_before_send_mail_start_function($cf7){
+	if($cf7->id != 230) return;
+	$mail=$cf7->prop('mail');
+	if($mail){
+		// var_dump($_POST);
+		// die();
+		$post_data = array(
+			'post_title'    => $_POST['your-title'].' '.$_POST['your-number'].' '.$_POST['your-name'],
+			'post_type'		=> 'otzivi',
+			'post_content'  => $_POST['your-message'],
+			'post_status'   => 'pending',
+			'post_author'   => 1,
+		);
+		// var_dump($post_data);
+		// die();
+		// Вставляем данные в БД
+		$post_id = wp_insert_post( wp_slash($post_data) );
+		if($post_id) {
+			update_field('vrach', $_POST['your-doctor'], $post_id);
+			update_field('telefon', $_POST['your-tel'], $post_id);
+			update_field('email', $_POST['your-email'], $post_id);
+		}
+		// $mail['body'].="\n\rС уважением Help-WP.ru"; // допишем в конец тела писма текст
+		// $cf7->set_properties(array('mail'=>$mail));
+		// var_dump($_POST);
+		// die();
+	}
+}
+add_filter( 'getarchives_where','my_custom_post_type_archive_where',10,2);
+function my_custom_post_type_archive_where($where,$args){  
+    $post_type  = isset($args['post_type'])  ? $args['post_type']  : 'post';  
+    $where = "WHERE post_type = '$post_type' AND post_status = 'publish'";
+    return $where;  
+}
+
+function tinymce_config_59772( $init ) {
+	// Don't remove line breaks
+	$init['remove_linebreaks'] = false; 
+	// Convert newline characters to BR tags
+	$init['convert_newlines_to_brs'] = true; 
+	// Do not remove redundant BR tags
+	$init['remove_redundant_brs'] = false;
+ 
+	// Pass $init back to WordPress
+	return $init;
+ }
+ add_filter('tiny_mce_before_init', 'tinymce_config_59772');
+
+
+ add_filter('use_block_editor_for_post_type', 'prefix_disable_gutenberg', 10, 2);
+ function prefix_disable_gutenberg($current_status, $post_type)
+ {
+	 // Use your post type key instead of 'product'
+	 if ($post_type === 'otzivi') return false;
+	 return $current_status;
+ }
+ function echo_first_image ($postID, $size = 'thumbnail')
+ {                   
+	 $args = array(
+	 'numberposts' => 1,
+	 'order'=> 'ASC',
+	 'post_mime_type' => 'image',
+	 'post_parent' => $postID,
+	 'post_status' => null,
+	 'post_type' => 'attachment'
+	 );
+ 
+	 $attachments = get_children( $args );
+ 
+	 //print_r($attachments);
+ 
+	 if ($attachments) {
+		 foreach($attachments as $attachment) {
+			//  $image_attributes = wp_get_attachment_image_src( $attachment->ID, $size )  ? wp_get_attachment_image_src( $attachment->ID, $size ) : wp_get_attachment_image_src( $attachment->ID, $size );
+ 
+			 echo wp_get_attachment_url( $attachment->ID, $size );
+ 
+		 }
+	 }
+ }
+
+/*
+add_action( 'wpcf7_mail_sent', 'your_wpcf7_mail_sent_function' );
+function your_wpcf7_mail_sent_function( $contact_form ) {
+	/*$title = $contact_form->title;
+	$posted_data = $contact_form->posted_data;
+	//Вместо "Контактная форма 1" необходимо указать название Вашей контактной формы
+	if ('Перезвоните мне' == $title ) {
+	$submission = WPCF7_Submission::get_instance();
+	$posted_data = $submission->get_posted_data();
+	//далее мы перехватывает введенные данные в Contact Form 7
+	//перехватываем поле [your-name]
+	$firstName = $posted_data['your-name'];
+	//перехватываем поле [your-message]
+	$message = $posted_data['your-message'];
+	//в данном примере рассмотрены два поля. Как перехватывать остальные поля
+	//читайте ниже.*/
+
+/*
+	$b24_id_user_from = 2130;
+	$b24_id_user_to = 247; // id пользователя Б24, на кого назначим лид (247 - Корпоротенок саксес)
+
+	$form_id = $contact_form->id;
+
+	//Перезвоните мне
+	if($form_id == 572) {
+		$submission = WPCF7_Submission::get_instance();
+		$posted_data = $submission->get_posted_data();
+
+		$values = array(
+			'PHONE' => $posted_data['your-tel'],
+			'SHOURUM' => $posted_data['shourum'],
+		);
+
+		//file_put_contents($_SERVER['DOCUMENT_ROOT'].'/tpn.log', print_r($values, true));
+
+		$b24_params = array(
+
+		    'fields' => [
+		    	"TITLE" => $contact_form->title,
+		        //"NAME" => htmlspecialchars($values['NAME']),
+		        "PHONE" => [
+		            [
+		                'VALUE' => htmlspecialchars($values['PHONE']),
+		                'VALUE_TYPE' => 'WORK'
+		            ]
+		        ],
+
+		        "STATUS_ID" => "NEW",
+		        "OPENED" => "Y", //доступен для всех
+		        "ASSIGNED_BY_ID" => $b24_id_user_to,
+		        "COMMENTS" => 
+		        	'Шоурум - <b>'.htmlspecialchars($values['SHOURUM']).':</b>',
+
+		        'UF_CRM_1449663155' => 'окна-саксэс.рф', //адрес сайта
+		        'UF_CRM_1488520490' => 184, // метка для отчетности (Окна)
+		        'UF_CRM_1567593007113' => 328, // направление ( Окна (СПК) )
+		        'UF_CRM_1449498510' => 'Нижний Новгород', // город
+		    ],
+		    'params' => [
+		        "REGISTER_SONET_EVENT" => "Y" 
+		    ]	
+		);
+
+		$bitrix = new Bitrix24();
+		$bitrix->send($b24_params, $b24_id_user_from);
+
+	}
+
+	//Письмо генеральному директору
+	if($form_id == 607) {
+		$submission = WPCF7_Submission::get_instance();
+		$posted_data = $submission->get_posted_data();
+
+		$values = array(
+			'NAME' => $posted_data['your-name'],
+			'PHONE' => $posted_data['your-tel'],
+			'EMAIL' => $posted_data['your-email'],
+			'CONTRACT' => $posted_data['your-doc'],
+			'LETTER_TITLE' => $posted_data['your-namerew'],
+			'LETTER_TEXT' => $posted_data['textarea-490'],
+			'LETTER_ADD' => $posted_data['file-89'],
+		);
+
+
+		$b24_params = array(
+
+		    'fields' => [
+		    	"TITLE" => $contact_form->title,
+		        "NAME" => htmlspecialchars($values['NAME']),
+		        //"LAST_NAME" => htmlspecialchars($values['LAST_NAME']),
+		        "EMAIL" => [
+		            [
+		                'VALUE' => htmlspecialchars($values['EMAIL']),
+		                'VALUE_TYPE' => 'WORK'
+		            ]
+		        ],
+		        "PHONE" => [
+		            [
+		                'VALUE' => htmlspecialchars($values['PHONE']),
+		                'VALUE_TYPE' => 'WORK'
+		            ]
+		        ],
+		        //"COMPANY_TITLE" => htmlspecialchars($arResult['R']->GV(2)),
+		        //"WEB_WORK" => htmlspecialchars($arResult['R']->GV(7)),
+
+		        "STATUS_ID" => "NEW",
+		        "OPENED" => "Y", //доступен для всех
+		        "ASSIGNED_BY_ID" => $b24_id_user_to,
+		        "COMMENTS" => 
+		        	'Договор № - <b>'.htmlspecialchars($values['CONTRACT']).':</b><br>'.
+		        	'<b>'.htmlspecialchars($values['LETTER_TITLE']).':</b><br>'.htmlspecialchars($values['LETTER_TEXT']),
+		        //"SOURCE_ID " => "COMPANY"
+
+		        'UF_CRM_1449663155' => 'окна-саксэс.рф', //адрес сайта
+		        'UF_CRM_1488520490' => 184, // метка для отчетности (Окна)
+		        'UF_CRM_1567593007113' => 328, // направление ( Окна (СПК) )
+		        'UF_CRM_1449498510' => 'Нижний Новгород', // город
+		    ],
+		    'params' => [
+		        "REGISTER_SONET_EVENT" => "Y" 
+		    ]	
+		);
+
+		//file_put_contents($_SERVER['DOCUMENT_ROOT'].'/tpn_gen.log', print_r($b24_params, true));
+
+		$bitrix = new Bitrix24();
+		$bitrix->send($b24_params, $b24_id_user_from);
+
+
+	}
+
+
+
+
+}*/
+
+
+?>

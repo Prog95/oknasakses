@@ -1,0 +1,18 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.7368 70.5263V36.8421" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65.2632 70.5263V36.8421" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="34.7368" y="42.1053" width="10.5263" height="28.4211" stroke="#1D509F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="21.0526" y="42.1053" width="7.36842" height="18.9474" stroke="#1D509F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="51.5789" y="42.1053" width="7.36842" height="18.9474" stroke="#1D509F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="53.6842" y="2.10527" width="7.36842" height="10.5263" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.3685 12.6316H65.2632L65.2632 23.1579" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.6315 12.6316H14.7368L14.7368 23.1579" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2.10529 77.8947L77.8948 77.8947" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2.10529 70.5263L77.8948 70.5263" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.5263 29.4737L10.5263 36.8421L69.4737 36.8421L69.4737 29.4737" stroke="#1D509F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.3158 65.2632V54.7368" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M73.6842 65.2632V54.7368" stroke="#0AA6E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="6.31581" cy="47.3684" rx="4.21053" ry="4.21053" fill="#0AA6E0"/>
+<circle cx="73.6842" cy="47.3684" r="4.21053" fill="#0AA6E0"/>
+<path d="M75.7895 29.4737H4.21051L40 8.42105L75.7895 29.4737Z" stroke="#1D509F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
